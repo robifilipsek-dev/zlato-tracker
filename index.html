@@ -1,274 +1,272 @@
 <!DOCTYPE html>
-<html lang="sl">
+<html lang="sl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zlato Tracker — Portfolio</title>
+    <title>Zlato Tracker — RF Digital</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        gold: {
-                            300: '#f5d77a',
-                            400: '#e8c45a',
-                            500: '#d4af37',
-                            600: '#b8941f'
+                        brand: {
+                            orange: '#f97316',
+                            amber: '#d97706',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981'
                         }
-                    },
-                    boxShadow: {
-                        gold: '0 0 30px rgba(212,175,55,0.10)'
                     }
                 }
             }
         }
     </script>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..700&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
+
     <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            letter-spacing: -0.011em;
+        }
+        .font-mono-num {
+            font-family: 'JetBrains Mono', monospace;
+        }
         html {
             scroll-behavior: smooth;
         }
-
-        body {
-            background:
-                radial-gradient(circle at 15% 10%, rgba(212,175,55,.06), transparent 30%),
-                radial-gradient(circle at 85% 20%, rgba(212,175,55,.04), transparent 30%),
-                #090b0f;
-        }
-
-        .glass {
-            background: rgba(18, 21, 27, 0.82);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,.07);
-        }
-
-        .gold-gradient {
-            background: linear-gradient(135deg, #f7df8a, #d4af37 45%, #9c7c18);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .number {
-            font-variant-numeric: tabular-nums;
-        }
-
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
             opacity: .5;
         }
-
         .loading {
             animation: pulse 1.5s infinite;
         }
-
         @keyframes pulse {
-            50% {
-                opacity: .45;
-            }
+            50% { opacity: .45; }
         }
     </style>
 </head>
 
-<body class="text-gray-200 min-h-screen">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen p-4 md:p-8 antialiased">
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="max-w-7xl mx-auto space-y-6">
 
     <!-- HEADER -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-yellow-300 to-yellow-700 flex items-center justify-center shadow-gold">
-                    <span class="text-black text-xl font-black">Au</span>
-                </div>
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-bold text-white">
-                        Zlato <span class="gold-gradient">Tracker</span>
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between border-b border-zinc-800/80 pb-5 gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="p-3 bg-orange-500/10 text-orange-500 rounded-xl border border-orange-500/20">
+                <span class="text-xl font-black font-mono-num">Au</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-white">
+                        Zlato <span class="text-orange-400">Tracker</span>
                     </h1>
-                    <p class="text-gray-500 text-sm">
-                        Cena zlata & osebni portfolio
-                    </p>
                 </div>
+                <p class="text-xs text-zinc-400 mt-1 font-normal">Cena zlata & osebni portfolio</p>
             </div>
         </div>
 
         <div class="flex items-center gap-3">
             <div id="connectionStatus"
-                 class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900 border border-gray-800 text-xs text-gray-400">
-                <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 font-mono-num">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                 Pridobivam podatke...
             </div>
             <button onclick="refreshData()"
-                    class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition text-sm">
-                ↻ Osveži
+                    class="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 transition text-xs font-semibold text-zinc-300">
+                Osveži
             </button>
         </div>
     </header>
 
 
-    <!-- CURRENT PRICE -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-        <div class="lg:col-span-2 glass rounded-2xl p-6 md:p-8 shadow-gold">
-            <div class="flex justify-between items-start gap-4">
-                <div>
-                    <p class="text-gray-500 text-sm mb-2">Trenutna cena zlata</p>
-                    <div class="flex items-end gap-3">
-                        <div id="currentPrice" class="number text-5xl md:text-6xl font-bold text-white loading">
-                            --,--
-                        </div>
-                        <div class="text-gray-500 text-xl mb-2">€/g</div>
-                    </div>
-                    <div id="priceChange" class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 text-sm">
-                        <span>—</span>
-                        <span>Danes</span>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-xs text-gray-500">24h</div>
-                    <div id="priceChangePercent" class="number text-lg font-semibold text-gray-400">—</div>
-                </div>
+    <!-- CURRENT PRICE & VALUE CARDS (KPIs) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Glavni KPI: Trenutna cena -->
+        <div class="bg-zinc-900 border border-orange-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden lg:col-span-2">
+            <div class="absolute top-0 right-0 w-1.5 h-full bg-orange-500"></div>
+            <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Trenutna cena zlata</div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span id="currentPrice" class="text-4xl md:text-5xl font-extrabold font-mono-num text-orange-400 loading">--,--</span>
+                <span class="text-zinc-400 font-semibold text-sm">€/g</span>
             </div>
-            <div class="mt-8 pt-5 border-t border-gray-800 flex flex-wrap justify-between gap-3 text-xs text-gray-500">
-                <span>Vir: <strong id="dataSource" class="text-gray-400">—</strong></span>
-                <span>Zadnja posodobitev: <strong id="lastUpdate" class="text-gray-400">—</strong></span>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div id="priceChange" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-950 border border-zinc-800 text-zinc-300">
+                    <span>—</span>
+                </div>
+                <div class="text-zinc-500 font-mono-num">24h sprememba: <strong id="priceChangePercent" class="text-zinc-300">—</strong></div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-zinc-800/80 flex flex-wrap justify-between gap-2 text-[11px] text-zinc-500 font-mono-num">
+                <span>Vir: <strong id="dataSource" class="text-zinc-400">—</strong></span>
+                <span>Posodobitev: <strong id="lastUpdate" class="text-zinc-400">—</strong></span>
             </div>
         </div>
 
-        <div class="glass rounded-2xl p-6">
-            <h2 class="text-sm font-semibold text-gray-400 mb-5">Vrednost zlata</h2>
-            <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-500">1 g</span>
-                    <strong id="price1g" class="number text-white">— €</strong>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-500">5 g</span>
-                    <strong id="price5g" class="number text-white">— €</strong>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-500">10 g</span>
-                    <strong id="price10g" class="number text-white">— €</strong>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-500">100 g</span>
-                    <strong id="price100g" class="number text-white">— €</strong>
-                </div>
-                <div class="pt-4 border-t border-gray-800 flex justify-between items-center">
-                    <span class="text-gray-500">1 kg</span>
-                    <strong id="price1kg" class="number text-yellow-400 text-lg">— €</strong>
+        <!-- Sekundarni KPI: Vrednost 100g -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Standardne teže</div>
+                <div class="mt-3 space-y-2 text-xs font-mono-num">
+                    <div class="flex justify-between items-center text-zinc-400">
+                        <span>1 g:</span>
+                        <strong id="price1g" class="text-white">— €</strong>
+                    </div>
+                    <div class="flex justify-between items-center text-zinc-400">
+                        <span>10 g:</span>
+                        <strong id="price10g" class="text-white">— €</strong>
+                    </div>
+                    <div class="flex justify-between items-center text-zinc-400">
+                        <span>50 g:</span>
+                        <strong id="price50g" class="text-white">— €</strong>
+                    </div>
                 </div>
             </div>
+            <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-500">Informativna spot vrednost</div>
         </div>
+
+        <!-- Sekundarni KPI: Vrednost 1kg -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Večje palice</div>
+                <div class="mt-3 space-y-2 text-xs font-mono-num">
+                    <div class="flex justify-between items-center text-zinc-400">
+                        <span>100 g:</span>
+                        <strong id="price100g" class="text-white">— €</strong>
+                    </div>
+                    <div class="flex justify-between items-center text-zinc-400">
+                        <span>1 kg:</span>
+                        <strong id="price1kg" class="text-amber-400 text-sm font-bold">— €</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-500 font-mono-num">1 Troy unca = 31.10 g</div>
+        </div>
+
     </section>
 
 
-    <!-- PORTFOLIO -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-        <div class="glass rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <h2 class="font-semibold text-white text-lg">Moja zaloga zlata</h2>
-                    <p class="text-xs text-gray-500 mt-1">Podatki se shranijo lokalno v brskalnik.</p>
-                </div>
-                <div class="text-yellow-400 text-2xl">◉</div>
-            </div>
-            <div class="space-y-5">
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2">Količina zlata</label>
-                    <div class="relative">
-                        <input id="goldAmount" type="number" min="0" step="0.01" placeholder="npr. 25" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-600 rounded-xl px-4 py-3 pr-12 outline-none transition text-white">
-                        <span class="absolute right-4 top-3.5 text-gray-500 text-sm">g</span>
+    <!-- PORTFOLIO & INPUTS -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Vnosni parametri (5 stolpcev) -->
+        <div class="lg:col-span-5 space-y-5">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-4">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-orange-400 flex items-center justify-between">
+                    <span>1. Moja zaloga zlata</span>
+                    <span class="text-zinc-500 font-normal">Lokalno shranjeno</span>
+                </h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Količina zlata (g)</label>
+                        <div class="relative">
+                            <input id="goldAmount" type="number" min="0" step="0.01" placeholder="npr. 25" 
+                                   class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 pr-8 text-xs font-mono-num text-white focus:outline-none focus:border-orange-500">
+                            <span class="absolute right-3 top-2 text-zinc-500 text-xs font-mono-num">g</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Povprečna nabavna cena (€/g)</label>
+                        <div class="relative">
+                            <input id="purchasePrice" type="number" min="0" step="0.01" placeholder="npr. 92.50" 
+                                   class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 pr-8 text-xs font-mono-num text-white focus:outline-none focus:border-orange-500">
+                            <span class="absolute right-3 top-2 text-zinc-500 text-xs font-mono-num">€</span>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2">Povprečna nabavna cena</label>
-                    <div class="relative">
-                        <input id="purchasePrice" type="number" min="0" step="0.01" placeholder="npr. 92.50" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-600 rounded-xl px-4 py-3 pr-12 outline-none transition text-white">
-                        <span class="absolute right-4 top-3.5 text-gray-500 text-sm">€/g</span>
-                    </div>
-                </div>
-                <button onclick="clearPortfolio()" class="w-full py-2.5 rounded-xl border border-gray-800 hover:border-red-900 hover:bg-red-950/20 text-gray-500 hover:text-red-400 transition text-sm">
-                    Počisti podatke
+
+                <button onclick="clearPortfolio()" class="w-full py-2 rounded-lg border border-zinc-800 hover:border-red-900/50 hover:bg-red-950/20 text-zinc-500 hover:text-red-400 transition text-xs font-mono-num">
+                    Počisti podatke portfolia
                 </button>
             </div>
         </div>
 
-        <div class="lg:col-span-2 glass rounded-2xl p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <p class="text-gray-500 text-sm mb-2">Trenutna vrednost</p>
-                    <div id="portfolioValue" class="number text-4xl md:text-5xl font-bold text-white">0,00 €</div>
-                    <p class="text-gray-600 text-sm mt-2"><span id="portfolioAmount">0</span> g zlata</p>
+        <!-- Izračun portfolia (7 stolpcev) -->
+        <div class="lg:col-span-7 space-y-5">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-4">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-white">Pregled portfolia</h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-1">
+                        <div class="text-zinc-400 text-xs">Trenutna vrednost</div>
+                        <div id="portfolioValue" class="text-2xl font-bold font-mono-num text-white">0,00 €</div>
+                        <div class="text-[11px] text-zinc-500 font-mono-num"><span id="portfolioAmount">0</span> g zlata</div>
+                    </div>
+                    <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-1">
+                        <div class="text-zinc-400 text-xs">Skupaj vloženo</div>
+                        <div id="portfolioInvested" class="text-2xl font-semibold font-mono-num text-zinc-300">0,00 €</div>
+                        <div class="text-[11px] text-zinc-500 font-mono-num">Nabavna: <span id="portfolioAvg">0,00 €/g</span></div>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-gray-500 text-sm mb-2">Vloženo</p>
-                    <div id="portfolioInvested" class="number text-3xl font-semibold text-gray-300">0,00 €</div>
-                    <p class="text-gray-600 text-sm mt-2">Povprečna nabavna cena: <span id="portfolioAvg">0,00 €/g</span></p>
-                </div>
-            </div>
-            <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="rounded-xl bg-gray-950/70 border border-gray-800 p-5">
-                    <div class="text-sm text-gray-500 mb-2">Čisti dobiček / izguba</div>
-                    <div id="portfolioProfit" class="number text-3xl font-bold">0,00 €</div>
-                </div>
-                <div class="rounded-xl bg-gray-950/70 border border-gray-800 p-5">
-                    <div class="text-sm text-gray-500 mb-2">Donosnost</div>
-                    <div id="portfolioROI" class="number text-3xl font-bold">0,00 %</div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-1">
+                        <div class="text-zinc-400 text-xs">Čisti dobiček / izguba</div>
+                        <div id="portfolioProfit" class="text-xl font-bold font-mono-num text-zinc-400">0,00 €</div>
+                    </div>
+                    <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-1">
+                        <div class="text-zinc-400 text-xs">Donosnost (ROI)</div>
+                        <div id="portfolioROI" class="text-xl font-bold font-mono-num text-zinc-400">0,00 %</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </section>
+
+    </div>
 
 
-    <!-- CHART -->
-    <section class="glass rounded-2xl p-5 md:p-7 mb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <!-- CHART SECTION -->
+    <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 md:p-6 shadow-lg space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-zinc-800/80 pb-4">
             <div>
-                <h2 class="text-xl font-semibold text-white">Gibanje cene zlata (zadnjih 30 dni)</h2>
-                <p class="text-sm text-gray-500 mt-1">Cena v €/g</p>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-white">Gibanje cene zlata</h2>
+                <p class="text-xs text-zinc-400 mt-0.5">Zadnjih 30 dni (cena v €/g)</p>
             </div>
         </div>
-        <div class="relative h-[380px]">
+        <div class="relative h-[340px]">
             <canvas id="goldChart"></canvas>
         </div>
     </section>
 
 
-    <!-- INFO CARDS -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-        <div class="glass rounded-2xl p-5">
-            <div class="text-yellow-400 text-xl mb-3">◎</div>
-            <h3 class="font-semibold text-white mb-2">Spot cena</h3>
-            <p class="text-sm text-gray-500 leading-relaxed">
-                Prikazana cena predstavlja približno borzno spot vrednost zlata in ne vključuje pribitkov trgovcev, izdelave ali marže pri fizičnem investicijskem zlatu.
+    <!-- INFO FOOTER CARDS -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
+            <div class="text-orange-400 font-bold">Spot cena</div>
+            <p class="text-zinc-400 leading-relaxed">
+                Prikazana cena predstavlja približno borzno spot vrednost zlata in ne vključuje pribitkov trgovcev ali marže pri fizičnem zlatu.
             </p>
         </div>
-        <div class="glass rounded-2xl p-5">
-            <div class="text-yellow-400 text-xl mb-3">▣</div>
-            <h3 class="font-semibold text-white mb-2">Lokalno shranjevanje</h3>
-            <p class="text-sm text-gray-500 leading-relaxed">
-                Količina in povprečna nabavna cena sta shranjeni v LocalStorage. Podatki ostanejo v brskalniku tudi po osvežitvi strani.
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
+            <div class="text-cyan-400 font-bold">Lokalno shranjevanje</div>
+            <p class="text-zinc-400 leading-relaxed">
+                Podatki o količini in nabavni ceni se shranjujejo izključno v lokalnem pomnilniku (LocalStorage) vašega brskalnika.
             </p>
         </div>
-        <div class="glass rounded-2xl p-5">
-            <div class="text-yellow-400 text-xl mb-3">↗</div>
-            <h3 class="font-semibold text-white mb-2">Donosnost</h3>
-            <p class="text-sm text-gray-500 leading-relaxed">
-                Dobiček in donosnost sta izračunana glede na trenutno spot ceno zlata ter tvojo povprečno nabavno ceno.
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
+            <div class="text-emerald-400 font-bold">Izračun donosnosti</div>
+            <p class="text-zinc-400 leading-relaxed">
+                Dobiček in donosnost se preračunavata sproti glede na trenutno pridobljeno borzno vrednost in vaš vnos.
             </p>
         </div>
     </section>
 
-    <footer class="text-center text-xs text-gray-700 pb-5">
-        Gold Tracker · Podatki so informativne narave · Spot cena ≠ prodajna cena fizičnega zlata
+    <footer class="text-center text-[11px] text-zinc-600 font-mono-num pb-4">
+        RF Digital · Podatki so informativne narave
     </footer>
+
 </div>
 
 
@@ -345,14 +343,14 @@
         roiElement.textContent = (roi >= 0 ? "+" : "") + formatNumber(roi, 2) + " %";
 
         if (profit > 0) {
-            profitElement.className = "number text-3xl font-bold text-emerald-400";
-            roiElement.className = "number text-3xl font-bold text-emerald-400";
+            profitElement.className = "text-xl font-bold font-mono-num text-emerald-400";
+            roiElement.className = "text-xl font-bold font-mono-num text-emerald-400";
         } else if (profit < 0) {
-            profitElement.className = "number text-3xl font-bold text-red-400";
-            roiElement.className = "number text-3xl font-bold text-red-400";
+            profitElement.className = "text-xl font-bold font-mono-num text-red-400";
+            roiElement.className = "text-xl font-bold font-mono-num text-red-400";
         } else {
-            profitElement.className = "number text-3xl font-bold text-gray-400";
-            roiElement.className = "number text-3xl font-bold text-gray-400";
+            profitElement.className = "text-xl font-bold font-mono-num text-zinc-400";
+            roiElement.className = "text-xl font-bold font-mono-num text-zinc-400";
         }
     }
 
@@ -417,8 +415,8 @@
         priceElement.textContent = formatNumber(currentGoldPrice, 2);
 
         document.getElementById("price1g").textContent = formatEUR(currentGoldPrice);
-        document.getElementById("price5g").textContent = formatEUR(currentGoldPrice * 5);
         document.getElementById("price10g").textContent = formatEUR(currentGoldPrice * 10);
+        document.getElementById("price50g").textContent = formatEUR(currentGoldPrice * 50);
         document.getElementById("price100g").textContent = formatEUR(currentGoldPrice * 100);
         document.getElementById("price1kg").textContent = formatEUR(currentGoldPrice * 1000);
 
@@ -431,12 +429,12 @@
                 <span class="${positive ? "text-emerald-400" : "text-red-400"} font-semibold">
                     ${positive ? "▲" : "▼"} ${Math.abs(data.change24h).toFixed(2)}%
                 </span>
-                <span class="text-gray-500">zadnjih 24h</span>
+                <span class="text-zinc-400">vs prejšnji dan</span>
             `;
             percentElement.textContent = (positive ? "+" : "") + data.change24h.toFixed(2) + "%";
-            percentElement.className = "number text-lg font-semibold " + (positive ? "text-emerald-400" : "text-red-400");
+            percentElement.className = "font-mono-num font-semibold " + (positive ? "text-emerald-400" : "text-red-400");
         } else {
-            changeElement.innerHTML = `<span class="text-gray-500">Podatek o spremembi ni na voljo</span>`;
+            changeElement.innerHTML = `<span class="text-zinc-500">Sprememba ni na voljo</span>`;
             percentElement.textContent = "—";
         }
 
@@ -447,7 +445,7 @@
 
     async function refreshData() {
         const status = document.getElementById("connectionStatus");
-        status.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> Osvežujem...`;
+        status.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Osvežujem...`;
 
         try {
             const data = await fetchCoinGecko();
@@ -459,7 +457,7 @@
                 const data = await fetchFallback();
                 updatePriceUI(data);
                 saveCache(data);
-                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-500"></span> <span class="text-yellow-400">Rezervni vir</span>`;
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> <span class="text-amber-400">Rezervni vir</span>`;
             } catch (fallbackError) {
                 const cached = loadCache();
                 if (cached) {
@@ -475,7 +473,6 @@
     }
 
     async function fetchHistory() {
-        // Fiksno nastavljeno na 30 dni zaradi stabilnosti grafa
         const url = "https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=30";
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error("History API napaka");
@@ -488,7 +485,6 @@
     }
 
     function generateFallbackHistory() {
-        // Če API za zgodovino zablokira, narišemo ravno črto na podlagi trenutne cene, da se ohrani vizualna struktura
         const result = [];
         const now = Date.now();
         const base = currentGoldPrice || 80;
@@ -506,7 +502,6 @@
         try {
             history = await fetchHistory();
         } catch (error) {
-            console.warn("Zgodovina ni na voljo, uporabljam simulacijo na podlagi trenutne cene.");
             history = generateFallbackHistory();
         }
         drawChart(history);
@@ -520,9 +515,9 @@
         const prices = history.map(item => item.price);
         const ctx = canvas.getContext("2d");
 
-        const gradient = ctx.createLinearGradient(0, 0, 0, 380);
-        gradient.addColorStop(0, "rgba(212,175,55,.22)");
-        gradient.addColorStop(1, "rgba(212,175,55,0)");
+        const gradient = ctx.createLinearGradient(0, 0, 0, 340);
+        gradient.addColorStop(0, "rgba(249, 115, 22, 0.2)");
+        gradient.addColorStop(1, "rgba(249, 115, 22, 0)");
 
         chart = new Chart(ctx, {
             type: "line",
@@ -530,14 +525,14 @@
                 labels,
                 datasets: [{
                     data: prices,
-                    borderColor: "#d4af37",
+                    borderColor: "#f97316",
                     backgroundColor: gradient,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.35,
                     pointRadius: 0,
                     pointHoverRadius: 5,
-                    pointHoverBackgroundColor: "#d4af37",
+                    pointHoverBackgroundColor: "#f97316",
                     pointHoverBorderColor: "#ffffff"
                 }]
             },
@@ -548,19 +543,19 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: "rgba(10,12,16,.95)",
-                        borderColor: "rgba(212,175,55,.35)",
+                        backgroundColor: "rgba(9, 11, 15, 0.95)",
+                        borderColor: "rgba(249, 115, 22, 0.3)",
                         borderWidth: 1,
-                        titleColor: "#aaa",
-                        bodyColor: "#fff",
-                        padding: 12,
+                        titleColor: "#a1a1aa",
+                        bodyColor: "#ffffff",
+                        padding: 10,
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
                                 return " " + formatEUR(context.parsed.y) + " / g";
                             },
                             title: function(context) {
-                                return new Date(context[0].label).toLocaleString("sl-SI", {
+                                return new Date(context[0].label).toLocaleDateString("sl-SI", {
                                     day: "2-digit", month: "2-digit", year: "numeric"
                                 });
                             }
@@ -569,9 +564,10 @@
                 },
                 scales: {
                     x: {
-                        grid: { color: "rgba(255,255,255,.035)" },
+                        grid: { color: "rgba(255, 255, 255, 0.03)" },
                         ticks: {
-                            color: "#666",
+                            color: "#71717a",
+                            font: { family: 'JetBrains Mono', size: 10 },
                             maxTicksLimit: 8,
                             callback: function(value) {
                                 return new Date(this.getLabelForValue(value)).toLocaleDateString("sl-SI", {
@@ -581,9 +577,10 @@
                         }
                     },
                     y: {
-                        grid: { color: "rgba(255,255,255,.035)" },
+                        grid: { color: "rgba(255, 255, 255, 0.03)" },
                         ticks: {
-                            color: "#666",
+                            color: "#71717a",
+                            font: { family: 'JetBrains Mono', size: 10 },
                             callback: function(value) { return value.toFixed(0) + " €"; }
                         }
                     }
@@ -603,7 +600,6 @@
 
     init();
     setInterval(refreshData, 5 * 60 * 1000);
-
 </script>
 </body>
 </html>
