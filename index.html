@@ -54,6 +54,14 @@
         @keyframes pulse {
             50% { opacity: .45; }
         }
+        /* Custom scrollbar for buttons on mobile */
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 
@@ -70,7 +78,7 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h1 class="text-2xl font-extrabold tracking-tight text-white">
-                        Zlato <span class="text-orange-400">Tracker</span>
+                        Zlato <span class="text-orange-400">tracker</span>
                     </h1>
                 </div>
                 <p class="text-xs text-zinc-400 mt-1 font-normal">Cena zlata & osebni portfolio</p>
@@ -229,12 +237,21 @@
 
     <!-- CHART SECTION -->
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 md:p-6 shadow-lg space-y-4">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-zinc-800/80 pb-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
             <div>
                 <h2 class="text-sm font-bold uppercase tracking-wider text-white">Gibanje cene zlata</h2>
-                <p class="text-xs text-zinc-400 mt-0.5">Zadnjih 30 dni (cena v €/g)</p>
+                <p id="chartSubtitle" class="text-xs text-zinc-400 mt-0.5">Zadnjih 30 dni (cena v €/g)</p>
+            </div>
+            
+            <!-- Časovni gumbi za graf -->
+            <div class="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 overflow-x-auto hide-scroll">
+                <button onclick="updateTimeframe('7', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">7 dni</button>
+                <button onclick="updateTimeframe('30', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md bg-zinc-800 text-white shadow transition font-semibold">30 dni</button>
+                <button onclick="updateTimeframe('180', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">6 mes</button>
+                <button onclick="updateTimeframe('365', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">1 leto</button>
             </div>
         </div>
+        
         <div class="relative h-[340px]">
             <canvas id="goldChart"></canvas>
         </div>
@@ -274,8 +291,10 @@
     const TROY_OUNCE_GRAMS = 31.1034768;
     let currentGoldPrice = null;
     let chart = null;
+    let currentDays = '30'; // Privzeto obdobje za graf
     const STORAGE_KEY = "goldTrackerPortfolio";
     const CACHE_KEY = "goldTrackerCache";
+    const CHART_CACHE_PREFIX = "goldChartCache_";
 
     function formatEUR(value, decimals = 2) {
         if (!Number.isFinite(value)) return "—";
@@ -469,26 +488,47 @@
                 }
             }
         }
-        loadChart();
+        loadChart(currentDays);
     }
 
-    async function fetchHistory() {
-        const url = "https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=30";
+    async function fetchHistory(days) {
+        const cacheKey = CHART_CACHE_PREFIX + days;
+        try {
+            const cached = JSON.parse(localStorage.getItem(cacheKey));
+            if (cached && (Date.now() - cached.timestamp < 60 * 60 * 1000)) {
+                return cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
+            }
+        } catch(e) {}
+
+        const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
         const response = await fetch(url, { cache: "no-store" });
+        
         if (!response.ok) throw new Error("History API napaka");
         const data = await response.json();
         if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
-        return data.prices.map(item => ({
+        
+        const formattedData = data.prices.map(item => ({
             time: new Date(item[0]),
             price: item[1] / TROY_OUNCE_GRAMS
         }));
+
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify({
+                timestamp: Date.now(),
+                data: formattedData
+            }));
+        } catch(e) {}
+
+        return formattedData;
     }
 
-    function generateFallbackHistory() {
+    function generateFallbackHistory(days) {
         const result = [];
         const now = Date.now();
         const base = currentGoldPrice || 80;
-        for (let i = 30; i >= 0; i--) {
+        let daysNum = parseInt(days) || 30;
+
+        for (let i = daysNum; i >= 0; i--) {
             result.push({
                 time: new Date(now - i * 24 * 60 * 60 * 1000),
                 price: base
@@ -497,17 +537,39 @@
         return result;
     }
 
-    async function loadChart() {
+    async function loadChart(days = '30') {
         let history;
         try {
-            history = await fetchHistory();
+            history = await fetchHistory(days);
         } catch (error) {
-            history = generateFallbackHistory();
+            console.warn("Uporabljam ravno črto zaradi napake pri pridobivanju zgodovine (Rate Limit).");
+            history = generateFallbackHistory(days);
         }
-        drawChart(history);
+        drawChart(history, days);
     }
 
-    function drawChart(history) {
+    async function updateTimeframe(days, btnElement) {
+        currentDays = days;
+        
+        document.querySelectorAll('.chart-btn').forEach(btn => {
+            btn.classList.remove('bg-zinc-800', 'text-white', 'shadow');
+            btn.classList.add('text-zinc-400');
+        });
+        btnElement.classList.remove('text-zinc-400');
+        btnElement.classList.add('bg-zinc-800', 'text-white', 'shadow');
+
+        const labels = {
+            '7': 'Zadnjih 7 dni',
+            '30': 'Zadnjih 30 dni',
+            '180': 'Zadnjih 6 mesecev',
+            '365': 'Zadnje 1 leto'
+        };
+        document.getElementById('chartSubtitle').textContent = `${labels[days]} (cena v €/g)`;
+
+        await loadChart(days);
+    }
+
+    function drawChart(history, days) {
         const canvas = document.getElementById("goldChart");
         if (chart) chart.destroy();
 
@@ -570,7 +632,11 @@
                             font: { family: 'JetBrains Mono', size: 10 },
                             maxTicksLimit: 8,
                             callback: function(value) {
-                                return new Date(this.getLabelForValue(value)).toLocaleDateString("sl-SI", {
+                                const date = new Date(this.getLabelForValue(value));
+                                if (days === '365') {
+                                    return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
+                                }
+                                return date.toLocaleDateString("sl-SI", {
                                     day: "2-digit", month: "2-digit"
                                 });
                             }
