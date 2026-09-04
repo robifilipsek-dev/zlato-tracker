@@ -4,68 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zlato tracker — RF Digital</title>
-
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            orange: '#f97316',
-                            amber: '#d97706',
-                            cyan: '#06b6d4',
-                            emerald: '#10b981'
-                        }
-                    }
-                }
-            }
-        }
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { orange: '#f97316', amber: '#d97706', cyan: '#06b6d4', emerald: '#10b981' } } } } }
     </script>
-
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..700&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
-
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            letter-spacing: -0.011em;
-        }
-        .font-mono-num {
-            font-family: 'JetBrains Mono', monospace;
-        }
-        html {
-            scroll-behavior: smooth;
-        }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            opacity: .5;
-        }
-        .loading {
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            50% { opacity: .45; }
-        }
-        .hide-scroll::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scroll {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.011em; }
+        .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+        html { scroll-behavior: smooth; }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { opacity: .5; }
+        .loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 50% { opacity: .45; } }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-
 <body class="bg-zinc-950 text-zinc-100 min-h-screen p-4 md:p-8 antialiased">
-
 <div class="max-w-7xl mx-auto space-y-6">
 
     <!-- HEADER -->
@@ -75,33 +31,22 @@
                 <span class="text-xl font-black font-mono-num">Au</span>
             </div>
             <div>
-                <div class="flex items-center gap-2">
-                    <h1 class="text-2xl font-extrabold tracking-tight text-white">
-                        Zlato <span class="text-orange-400">tracker</span>
-                    </h1>
-                </div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">Zlato <span class="text-orange-400">tracker</span></h1>
                 <p class="text-xs text-zinc-400 mt-1 font-normal">Cena zlata & osebni portfolio</p>
             </div>
         </div>
-
         <div class="flex items-center gap-3">
-            <div id="connectionStatus"
-                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 font-mono-num">
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                Pridobivam podatke...
+            <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 font-mono-num">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Pridobivam podatke...
             </div>
-            <button onclick="refreshData()"
-                    class="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 transition text-xs font-semibold text-zinc-300">
+            <button onclick="refreshData()" class="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 transition text-xs font-semibold text-zinc-300">
                 Osveži
             </button>
         </div>
     </header>
 
-
-    <!-- CURRENT PRICE & VALUE CARDS (KPIs) -->
+    <!-- CURRENT PRICE & VALUE CARDS -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <!-- Glavni KPI: Trenutna cena -->
         <div class="bg-zinc-900 border border-orange-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden lg:col-span-2">
             <div class="absolute top-0 right-0 w-1.5 h-full bg-orange-500"></div>
             <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Trenutna cena zlata</div>
@@ -110,9 +55,7 @@
                 <span class="text-zinc-400 font-semibold text-sm">€/g</span>
             </div>
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div id="priceChange" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-950 border border-zinc-800 text-zinc-300">
-                    <span>—</span>
-                </div>
+                <div id="priceChange" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-950 border border-zinc-800 text-zinc-300"><span>—</span></div>
                 <div class="text-zinc-500 font-mono-num">24h sprememba: <strong id="priceChangePercent" class="text-zinc-300">—</strong></div>
             </div>
             <div class="mt-4 pt-3 border-t border-zinc-800/80 flex flex-wrap justify-between gap-2 text-[11px] text-zinc-500 font-mono-num">
@@ -120,91 +63,60 @@
                 <span>Posodobitev: <strong id="lastUpdate" class="text-zinc-400">—</strong></span>
             </div>
         </div>
-
-        <!-- Sekundarni KPI: Vrednost manjših palic -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
             <div>
                 <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Standardne teže</div>
                 <div class="mt-3 space-y-2 text-xs font-mono-num">
-                    <div class="flex justify-between items-center text-zinc-400">
-                        <span>1 g:</span>
-                        <strong id="price1g" class="text-white">— €</strong>
-                    </div>
-                    <div class="flex justify-between items-center text-zinc-400">
-                        <span>10 g:</span>
-                        <strong id="price10g" class="text-white">— €</strong>
-                    </div>
-                    <div class="flex justify-between items-center text-zinc-400">
-                        <span>50 g:</span>
-                        <strong id="price50g" class="text-white">— €</strong>
-                    </div>
+                    <div class="flex justify-between items-center text-zinc-400"><span>1 g:</span> <strong id="price1g" class="text-white">— €</strong></div>
+                    <div class="flex justify-between items-center text-zinc-400"><span>10 g:</span> <strong id="price10g" class="text-white">— €</strong></div>
+                    <div class="flex justify-between items-center text-zinc-400"><span>50 g:</span> <strong id="price50g" class="text-white">— €</strong></div>
                 </div>
             </div>
             <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-500">Informativna spot vrednost</div>
         </div>
-
-        <!-- Sekundarni KPI: Vrednost večjih palic -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
             <div>
                 <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Večje palice</div>
                 <div class="mt-3 space-y-2 text-xs font-mono-num">
-                    <div class="flex justify-between items-center text-zinc-400">
-                        <span>100 g:</span>
-                        <strong id="price100g" class="text-white">— €</strong>
-                    </div>
-                    <div class="flex justify-between items-center text-zinc-400">
-                        <span>1 kg:</span>
-                        <strong id="price1kg" class="text-amber-400 text-sm font-bold">— €</strong>
-                    </div>
+                    <div class="flex justify-between items-center text-zinc-400"><span>100 g:</span> <strong id="price100g" class="text-white">— €</strong></div>
+                    <div class="flex justify-between items-center text-zinc-400"><span>1 kg:</span> <strong id="price1kg" class="text-amber-400 text-sm font-bold">— €</strong></div>
                 </div>
             </div>
             <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-500 font-mono-num">1 Troy unca = 31.10 g</div>
         </div>
-
     </section>
-
 
     <!-- PORTFOLIO & INPUTS -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Vnosni parametri -->
         <div class="lg:col-span-5 space-y-5">
             <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-4">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-orange-400 flex items-center justify-between">
-                    <span>1. Moja zaloga zlata</span>
-                    <span class="text-zinc-500 font-normal">Lokalno shranjeno</span>
+                    <span>1. Moja zaloga zlata</span> <span class="text-zinc-500 font-normal">Lokalno shranjeno</span>
                 </h2>
-                
                 <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-medium text-zinc-300 mb-1">Količina zlata (g)</label>
                         <div class="relative">
-                            <input id="goldAmount" type="number" min="0" step="0.01" placeholder="npr. 25" 
-                                   class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 pr-8 text-xs font-mono-num text-white focus:outline-none focus:border-orange-500">
+                            <input id="goldAmount" type="number" min="0" step="0.01" placeholder="npr. 25" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 pr-8 text-xs font-mono-num text-white focus:outline-none focus:border-orange-500">
                             <span class="absolute right-3 top-2 text-zinc-500 text-xs font-mono-num">g</span>
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-zinc-300 mb-1">Povprečna nabavna cena (€/g)</label>
                         <div class="relative">
-                            <input id="purchasePrice" type="number" min="0" step="0.01" placeholder="npr. 92.50" 
-                                   class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 pr-8 text-xs font-mono-num text-white focus:outline-none focus:border-orange-500">
+                            <input id="purchasePrice" type="number" min="0" step="0.01" placeholder="npr. 92.50" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 pr-8 text-xs font-mono-num text-white focus:outline-none focus:border-orange-500">
                             <span class="absolute right-3 top-2 text-zinc-500 text-xs font-mono-num">€</span>
                         </div>
                     </div>
                 </div>
-
                 <button onclick="clearPortfolio()" class="w-full py-2 rounded-lg border border-zinc-800 hover:border-red-900/50 hover:bg-red-950/20 text-zinc-500 hover:text-red-400 transition text-xs font-mono-num">
                     Počisti podatke portfolia
                 </button>
             </div>
         </div>
-
-        <!-- Izračun portfolia -->
         <div class="lg:col-span-7 space-y-5">
             <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-4">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-white">Pregled portfolia</h2>
-                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-1">
                         <div class="text-zinc-400 text-xs">Trenutna vrednost</div>
@@ -217,7 +129,6 @@
                         <div class="text-[11px] text-zinc-500 font-mono-num">Nabavna: <span id="portfolioAvg">0,00 €/g</span></div>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-1">
                         <div class="text-zinc-400 text-xs">Čisti dobiček / izguba</div>
@@ -230,9 +141,7 @@
                 </div>
             </div>
         </div>
-
     </div>
-
 
     <!-- CHART SECTION -->
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 md:p-6 shadow-lg space-y-4">
@@ -241,8 +150,6 @@
                 <h2 class="text-sm font-bold uppercase tracking-wider text-white">Gibanje cene zlata</h2>
                 <p id="chartSubtitle" class="text-xs text-zinc-400 mt-0.5">Zadnjih 30 dni (cena v €/g)</p>
             </div>
-            
-            <!-- Posodobljeni standardni časovni gumbi -->
             <div class="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 overflow-x-auto hide-scroll">
                 <button onclick="updateTimeframe('1', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">24h</button>
                 <button onclick="updateTimeframe('7', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">7 dni</button>
@@ -253,97 +160,50 @@
                 <button onclick="updateTimeframe('365', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">1 leto</button>
             </div>
         </div>
-        
-        <div class="relative h-[340px] w-full">
+        <div class="relative h-[340px]">
             <canvas id="goldChart"></canvas>
         </div>
     </section>
 
-
-    <!-- INFO FOOTER CARDS -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
-            <div class="text-orange-400 font-bold">Spot cena</div>
-            <p class="text-zinc-400 leading-relaxed">
-                Prikazana cena predstavlja približno borzno spot vrednost zlata in ne vključuje pribitkov trgovcev ali marže pri fizičnem zlatu.
-            </p>
-        </div>
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
-            <div class="text-cyan-400 font-bold">Lokalno shranjevanje</div>
-            <p class="text-zinc-400 leading-relaxed">
-                Podatki o količini, nabavni ceni in predpomnjeni zgodovini se shranjujejo izključno v lokalnem pomnilniku vaše naprave.
-            </p>
-        </div>
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
-            <div class="text-emerald-400 font-bold">Izračun donosnosti</div>
-            <p class="text-zinc-400 leading-relaxed">
-                Dobiček in donosnost se preračunavata sproti glede na trenutno pridobljeno borzno vrednost in vaš vnos.
-            </p>
-        </div>
-    </section>
-
-    <footer class="text-center text-[11px] text-zinc-600 font-mono-num pb-4">
-        RF Digital · Podatki so informativne narave
-    </footer>
-
 </div>
 
-
 <script>
-    const TROY_OUNCE_GRAMS = 31.1034768;
     let currentGoldPrice = null;
     let chart = null;
     let currentDays = '30';
     const STORAGE_KEY = "goldTrackerPortfolio";
-    const CACHE_KEY = "goldTrackerCache";
     const CHART_CACHE_PREFIX = "goldChartCache_";
 
     function formatEUR(value, decimals = 2) {
         if (!Number.isFinite(value)) return "—";
-        return new Intl.NumberFormat("sl-SI", {
-            style: "currency",
-            currency: "EUR",
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals
-        }).format(value);
+        return new Intl.NumberFormat("sl-SI", { style: "currency", currency: "EUR", minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
     }
-
     function formatNumber(value, decimals = 2) {
         if (!Number.isFinite(value)) return "—";
-        return new Intl.NumberFormat("sl-SI", {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals
-        }).format(value);
+        return new Intl.NumberFormat("sl-SI", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
     }
 
+    // --- PORTFOLIO LOGIKA ---
     function savePortfolio() {
-        const data = {
-            amount: parseFloat(document.getElementById("goldAmount").value) || 0,
-            purchasePrice: parseFloat(document.getElementById("purchasePrice").value) || 0
-        };
+        const data = { amount: parseFloat(document.getElementById("goldAmount").value) || 0, purchasePrice: parseFloat(document.getElementById("purchasePrice").value) || 0 };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         calculatePortfolio();
     }
-
     function loadPortfolio() {
         try {
             const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
             if (!saved) return;
             document.getElementById("goldAmount").value = saved.amount || "";
             document.getElementById("purchasePrice").value = saved.purchasePrice || "";
-        } catch (error) {
-            console.warn("Napaka pri branju portfolia:", error);
-        }
+        } catch (error) {}
     }
-
     function clearPortfolio() {
-        if (!confirm("Ali želiš izbrisati podatke o zalogi zlata?")) return;
+        if (!confirm("Ali želiš izbrisati podatke o portfoliu?")) return;
         localStorage.removeItem(STORAGE_KEY);
         document.getElementById("goldAmount").value = "";
         document.getElementById("purchasePrice").value = "";
         calculatePortfolio();
     }
-
     function calculatePortfolio() {
         const amount = parseFloat(document.getElementById("goldAmount").value) || 0;
         const purchasePrice = parseFloat(document.getElementById("purchasePrice").value) || 0;
@@ -357,82 +217,62 @@
         document.getElementById("portfolioInvested").textContent = formatEUR(invested);
         document.getElementById("portfolioAvg").textContent = formatEUR(purchasePrice) + "/g";
 
-        const profitElement = document.getElementById("portfolioProfit");
-        const roiElement = document.getElementById("portfolioROI");
+        const profitEl = document.getElementById("portfolioProfit");
+        const roiEl = document.getElementById("portfolioROI");
+        profitEl.textContent = (profit >= 0 ? "+" : "") + formatEUR(profit);
+        roiEl.textContent = (roi >= 0 ? "+" : "") + formatNumber(roi, 2) + " %";
 
-        profitElement.textContent = (profit >= 0 ? "+" : "") + formatEUR(profit);
-        roiElement.textContent = (roi >= 0 ? "+" : "") + formatNumber(roi, 2) + " %";
-
-        if (profit > 0) {
-            profitElement.className = "text-xl font-bold font-mono-num text-emerald-400";
-            roiElement.className = "text-xl font-bold font-mono-num text-emerald-400";
-        } else if (profit < 0) {
-            profitElement.className = "text-xl font-bold font-mono-num text-red-400";
-            roiElement.className = "text-xl font-bold font-mono-num text-red-400";
-        } else {
-            profitElement.className = "text-xl font-bold font-mono-num text-zinc-400";
-            roiElement.className = "text-xl font-bold font-mono-num text-zinc-400";
-        }
+        profitEl.className = "text-xl font-bold font-mono-num " + (profit > 0 ? "text-emerald-400" : (profit < 0 ? "text-red-400" : "text-zinc-400"));
+        roiEl.className = "text-xl font-bold font-mono-num " + (profit > 0 ? "text-emerald-400" : (profit < 0 ? "text-red-400" : "text-zinc-400"));
     }
 
-    async function fetchCoinGecko() {
-        const url = "https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=eur&include_24hr_change=true";
-        const response = await fetch(url, { cache: "no-store" });
-        if (!response.ok) throw new Error("CoinGecko API napaka");
-        const data = await response.json();
-        if (!data["pax-gold"] || !Number.isFinite(data["pax-gold"].eur)) throw new Error("Neveljavni podatki CoinGecko");
-        return {
-            price: data["pax-gold"].eur / TROY_OUNCE_GRAMS,
-            change24h: Number(data["pax-gold"].eur_24h_change) || 0,
-            source: "CoinGecko / PAXG"
-        };
+    // --- POMOŽNE FUNKCIJE ZA CACHE ---
+    function setCache(key, data) {
+        try { localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data })); } catch (e) {}
     }
-
-    async function fetchFallback() {
-        const metalResponse = await fetch("https://api.metals.live/v1/spot/gold", { cache: "no-store" });
-        if (!metalResponse.ok) throw new Error("Metals.live napaka");
-        const metalData = await metalResponse.json();
-        let goldUSD = null;
-        if (Array.isArray(metalData) && metalData.length) {
-            const latest = metalData[metalData.length - 1];
-            if (latest && Number.isFinite(latest.price)) goldUSD = latest.price;
-        }
-        if (!goldUSD) throw new Error("Ni USD cene zlata");
-
-        const fxResponse = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR", { cache: "no-store" });
-        if (!fxResponse.ok) throw new Error("Frankfurter napaka");
-        const fxData = await fxResponse.json();
-        const usdToEur = fxData.rates.EUR;
-        if (!Number.isFinite(usdToEur)) throw new Error("Ni EUR/USD tečaja");
-
-        return {
-            price: (goldUSD * usdToEur) / TROY_OUNCE_GRAMS,
-            change24h: null,
-            source: "Metals.live + Frankfurter"
-        };
-    }
-
-    function saveCache(data) {
+    function getValidCache(key, maxAgeMs) {
         try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, timestamp: Date.now() }));
-        } catch (error) {}
+            const item = JSON.parse(localStorage.getItem(key));
+            if (item && (Date.now() - item.timestamp < maxAgeMs)) {
+                return { ...item.data, cached: true };
+            }
+        } catch (e) {}
+        return null;
+    }
+    function getFallbackCache(key) {
+        try {
+            const item = JSON.parse(localStorage.getItem(key));
+            if (item) return { ...item.data, source: "Lokalni arhiv", cached: true };
+        } catch (e) {}
+        return { price: 0, change24h: null, source: "Podatki niso na voljo", error: true };
     }
 
-    function loadCache() {
+    // --- 2. STABILEN ZLATO FETCH ---
+    async function fetchGoldData() {
+        const CACHE_KEY = "gold_stable_cache";
+        const cached = getValidCache(CACHE_KEY, 60 * 60 * 1000); // 1 ura predpomnilnika
+        if (cached) return cached;
+
         try {
-            const data = JSON.parse(localStorage.getItem(CACHE_KEY));
-            if (!data) return null;
-            return data;
-        } catch {
-            return null;
+            const res = await fetch("https://api.frankfurter.app/latest?from=XAU&to=EUR");
+            if (!res.ok) throw new Error("Frankfurter error");
+            const data = await res.json();
+            const pricePerOz = data.rates.EUR;
+            const result = { price: pricePerOz / 31.1034768, change24h: null, source: "ECB / Frankfurter" };
+            setCache(CACHE_KEY, result);
+            return result;
+        } catch (e) {
+            console.warn("Frankfurter ni dosegljiv, berem lokalni cache...");
         }
+
+        return getFallbackCache(CACHE_KEY);
     }
 
     function updatePriceUI(data) {
         currentGoldPrice = data.price;
-        const priceElement = document.getElementById("currentPrice");
-        priceElement.classList.remove("loading");
-        priceElement.textContent = formatNumber(currentGoldPrice, 2);
+        const priceEl = document.getElementById("currentPrice");
+        priceEl.classList.remove("loading");
+        priceEl.textContent = formatNumber(currentGoldPrice, 2);
 
         document.getElementById("price1g").textContent = formatEUR(currentGoldPrice);
         document.getElementById("price10g").textContent = formatEUR(currentGoldPrice * 10);
@@ -440,26 +280,22 @@
         document.getElementById("price100g").textContent = formatEUR(currentGoldPrice * 100);
         document.getElementById("price1kg").textContent = formatEUR(currentGoldPrice * 1000);
 
-        const changeElement = document.getElementById("priceChange");
-        const percentElement = document.getElementById("priceChangePercent");
+        const changeEl = document.getElementById("priceChange");
+        const percentEl = document.getElementById("priceChangePercent");
 
-        if (Number.isFinite(data.change24h)) {
+        if (data.change24h !== null && Number.isFinite(data.change24h)) {
             const positive = data.change24h >= 0;
-            changeElement.innerHTML = `
-                <span class="${positive ? "text-emerald-400" : "text-red-400"} font-semibold">
-                    ${positive ? "▲" : "▼"} ${Math.abs(data.change24h).toFixed(2)}%
-                </span>
-                <span class="text-zinc-400">vs prejšnji dan</span>
-            `;
-            percentElement.textContent = (positive ? "+" : "") + data.change24h.toFixed(2) + "%";
-            percentElement.className = "font-mono-num font-semibold " + (positive ? "text-emerald-400" : "text-red-400");
+            changeEl.innerHTML = `<span class="${positive ? "text-emerald-400" : "text-red-400"} font-semibold">${positive ? "▲" : "▼"} ${Math.abs(data.change24h).toFixed(2)}%</span> <span class="text-zinc-400">vs prejšnji dan</span>`;
+            percentEl.textContent = (positive ? "+" : "") + data.change24h.toFixed(2) + "%";
+            percentEl.className = "font-mono-num font-semibold " + (positive ? "text-emerald-400" : "text-red-400");
         } else {
-            changeElement.innerHTML = `<span class="text-zinc-500">Sprememba ni na voljo</span>`;
-            percentElement.textContent = "—";
+            changeEl.innerHTML = `<span class="text-zinc-500">Sprememba ni na voljo</span>`;
+            percentEl.textContent = "—";
+            percentEl.className = "text-zinc-500 font-mono-num";
         }
 
         document.getElementById("dataSource").textContent = data.source;
-        document.getElementById("lastUpdate").textContent = new Date(data.timestamp || Date.now()).toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
+        document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
         calculatePortfolio();
     }
 
@@ -467,81 +303,60 @@
         const status = document.getElementById("connectionStatus");
         status.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Osvežujem...`;
 
-        try {
-            const data = await fetchCoinGecko();
+        const data = await fetchGoldData();
+
+        if (data.error) {
+            status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span> <span class="text-red-400">Ni povezave</span>`;
+            document.getElementById("currentPrice").textContent = "—";
+        } else {
             updatePriceUI(data);
-            saveCache(data);
-            status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span class="text-emerald-400">Povezano</span>`;
-        } catch (error) {
-            try {
-                const data = await fetchFallback();
-                updatePriceUI(data);
-                saveCache(data);
-                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> <span class="text-amber-400">Rezervni vir</span>`;
-            } catch (fallbackError) {
-                const cached = loadCache();
-                if (cached) {
-                    updatePriceUI({ price: cached.price, change24h: cached.change24h, source: cached.source + " (Cache)", timestamp: cached.timestamp });
-                    status.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-500"></span> <span class="text-orange-400">Brez povezave</span>`;
-                } else {
-                    status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span> <span class="text-red-400">Ni povezave</span>`;
-                    document.getElementById("currentPrice").textContent = "—";
-                }
+            if (data.cached && data.source === "Lokalni arhiv") {
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-500"></span> <span class="text-orange-400">Lokalni arhiv</span>`;
+            } else if (data.cached) {
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span class="text-emerald-400">Povezano (Cache)</span>`;
+            } else {
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span class="text-emerald-400">Povezano (${data.source})</span>`;
             }
         }
         await loadChart(currentDays);
     }
 
-    // Stabilno pridobivanje zgodovine prek CoinGecko API za obdobja do 1 leta
+    // --- GRAF LOGIKA ---
     async function fetchHistory(days) {
         const cacheKey = CHART_CACHE_PREFIX + days;
+        const cached = getValidCache(cacheKey, 60 * 60 * 1000);
+        if (cached && cached.data) return cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
 
-        try {
-            const cached = JSON.parse(localStorage.getItem(cacheKey));
-            if (cached && Date.now() - cached.timestamp < 2 * 60 * 60 * 1000) {
-                return cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
-            }
-        } catch(e) {}
-
-        const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
-        const response = await fetch(url, { cache: "no-store" });
-        if (!response.ok) throw new Error("History API napaka");
-        const data = await response.json();
-        if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
-
-        const formattedData = data.prices.map(item => ({
-            time: new Date(item[0]),
-            price: item[1] / TROY_OUNCE_GRAMS
-        }));
-
-        try {
-            localStorage.setItem(cacheKey, JSON.stringify({
-                timestamp: Date.now(),
-                data: formattedData
-            }));
-        } catch(e) {}
-
+        // Kot rezervna rešitev za zlati graf lahko tukaj uporabiš poljuben API (npr. CoinGecko pax-gold)
+        const res = await fetch(`https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`);
+        if (!res.ok) throw new Error("History API napaka");
+        const data = await res.json();
+        const formattedData = data.prices.map(item => ({ time: new Date(item[0]), price: item[1] / 31.1034768 }));
+        
+        setCache(cacheKey, { data: formattedData });
         return formattedData;
     }
 
+    function generateFallbackHistory(days) {
+        const result = [];
+        const base = currentGoldPrice || 75;
+        let daysNum = parseInt(days) || 30;
+        for (let i = daysNum; i >= 0; i--) result.push({ time: new Date(Date.now() - i * 24 * 60 * 60 * 1000), price: base });
+        return result;
+    }
+
     async function loadChart(days = '30') {
-        let history;
         try {
-            history = await fetchHistory(days);
+            const history = await fetchHistory(days);
+            drawChart(history, days);
         } catch (error) {
-            console.warn("Napaka pri nalaganju zgodovine za", days, "dni:", error);
-            const base = currentGoldPrice || 85;
-            history = [
-                { time: new Date(Date.now() - days * 24 * 60 * 60 * 1000), price: base * 0.98 },
-                { time: new Date(), price: base }
-            ];
+            console.warn("Napaka pri grafu, ohranjam starega (Silent failure).");
+            if (!chart) drawChart(generateFallbackHistory(days), days); // Vrne zadnji trend oz. ravno črto, če grafa še ni
         }
-        drawChart(history, days);
     }
 
     async function updateTimeframe(days, btnElement) {
         currentDays = days;
-        
         document.querySelectorAll('.chart-btn').forEach(btn => {
             btn.classList.remove('bg-zinc-800', 'text-white', 'shadow');
             btn.classList.add('text-zinc-400');
@@ -549,33 +364,15 @@
         btnElement.classList.remove('text-zinc-400');
         btnElement.classList.add('bg-zinc-800', 'text-white', 'shadow');
 
-        const labels = {
-            '1': 'Zadnjih 24 ur',
-            '7': 'Zadnjih 7 dni',
-            '14': 'Zadnjih 14 dni',
-            '30': 'Zadnjih 30 dni',
-            '90': 'Zadnjih 90 dni (3 meseci)',
-            '180': 'Zadnjih 180 dni (6 mesecev)',
-            '365': 'Zadnje 1 leto (365 dni)'
-        };
+        const labels = { '1': 'Zadnjih 24 ur', '7': 'Zadnjih 7 dni', '14': 'Zadnjih 14 dni', '30': 'Zadnjih 30 dni', '90': 'Zadnjih 90 dni', '180': 'Zadnjih 6 mesecev', '365': 'Zadnje leto' };
         document.getElementById('chartSubtitle').textContent = `${labels[days] || 'Zgodovina'} (cena v €/g)`;
-
         await loadChart(days);
     }
 
     function drawChart(history, days) {
         const canvas = document.getElementById("goldChart");
-        if (!canvas) return;
-
-        if (chart) {
-            chart.destroy();
-            chart = null;
-        }
-
-        const labels = history.map(item => item.time);
-        const prices = history.map(item => item.price);
+        if (chart) chart.destroy();
         const ctx = canvas.getContext("2d");
-
         const gradient = ctx.createLinearGradient(0, 0, 0, 340);
         gradient.addColorStop(0, "rgba(249, 115, 22, 0.25)");
         gradient.addColorStop(1, "rgba(249, 115, 22, 0)");
@@ -583,91 +380,23 @@
         chart = new Chart(ctx, {
             type: "line",
             data: {
-                labels,
-                datasets: [{
-                    data: prices,
-                    borderColor: "#f97316",
-                    backgroundColor: gradient,
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.15,
-                    pointRadius: 0,
-                    pointHoverRadius: 5,
-                    pointHoverBackgroundColor: "#f97316",
-                    pointHoverBorderColor: "#ffffff"
-                }]
+                labels: history.map(i => i.time),
+                datasets: [{ data: history.map(i => i.price), borderColor: "#f97316", backgroundColor: gradient, borderWidth: 2, fill: true, tension: 0.2, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: "#f97316" }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 400 },
-                interaction: { intersect: false, mode: "index" },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: "rgba(9, 11, 15, 0.95)",
-                        borderColor: "rgba(249, 115, 22, 0.3)",
-                        borderWidth: 1,
-                        titleColor: "#a1a1aa",
-                        bodyColor: "#ffffff",
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return " " + formatEUR(context.parsed.y) + " / g";
-                            },
-                            title: function(context) {
-                                if (!context[0]) return "";
-                                const date = new Date(context[0].label);
-                                if (days === '1') {
-                                    return date.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
-                                }
-                                return date.toLocaleDateString("sl-SI", {
-                                    day: "2-digit", month: "2-digit", year: "numeric"
-                                });
-                            }
-                        }
-                    }
-                },
+                responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: "index" }, plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        grid: { color: "rgba(255, 255, 255, 0.03)" },
-                        ticks: {
-                            color: "#71717a",
-                            font: { family: 'JetBrains Mono', size: 10 },
-                            maxTicksLimit: 8,
-                            callback: function(value) {
-                                const date = new Date(this.getLabelForValue(value));
-                                if (days === '1') {
-                                    return date.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
-                                }
-                                if (days === '365' || days === '180') {
-                                    return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
-                                }
-                                return date.toLocaleDateString("sl-SI", {
-                                    day: "2-digit", month: "2-digit"
-                                });
-                            }
-                        }
-                    },
-                    y: {
-                        grid: { color: "rgba(255, 255, 255, 0.03)" },
-                        ticks: {
-                            color: "#71717a",
-                            font: { family: 'JetBrains Mono', size: 10 },
-                            callback: function(value) { return value.toFixed(1) + " €"; }
-                        }
-                    }
+                    x: { grid: { color: "rgba(255, 255, 255, 0.03)" }, ticks: { color: "#71717a", font: { family: 'JetBrains Mono', size: 10 }, maxTicksLimit: 8, callback: function(value) {
+                        const date = new Date(this.getLabelForValue(value));
+                        if (days === '1') return date.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
+                        if (days === '365' || days === '180') return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
+                        return date.toLocaleDateString("sl-SI", { day: "2-digit", month: "2-digit" });
+                    } } },
+                    y: { grid: { color: "rgba(255, 255, 255, 0.03)" }, ticks: { color: "#71717a", font: { family: 'JetBrains Mono', size: 10 }, callback: value => value.toFixed(1) + " €" } }
                 }
             }
         });
     }
-
-    const resizeObserver = new ResizeObserver(() => {
-        if (chart) chart.resize();
-    });
-    const chartContainer = document.getElementById("goldChart")?.parentElement;
-    if (chartContainer) resizeObserver.observe(chartContainer);
 
     document.getElementById("goldAmount").addEventListener("input", savePortfolio);
     document.getElementById("purchasePrice").addEventListener("input", savePortfolio);
@@ -679,7 +408,7 @@
     }
 
     init();
-    setInterval(refreshData, 5 * 60 * 1000);
+    setInterval(refreshData, 15 * 60 * 1000); // 15 minut
 </script>
 </body>
 </html>
