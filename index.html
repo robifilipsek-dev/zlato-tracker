@@ -242,14 +242,15 @@
                 <p id="chartSubtitle" class="text-xs text-zinc-400 mt-0.5">Zadnjih 30 dni (cena v €/g)</p>
             </div>
             
-            <!-- Časovni gumbi za graf -->
+            <!-- Posodobljeni standardni časovni gumbi -->
             <div class="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 overflow-x-auto hide-scroll">
+                <button onclick="updateTimeframe('1', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">24h</button>
                 <button onclick="updateTimeframe('7', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">7 dni</button>
+                <button onclick="updateTimeframe('14', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">14 dni</button>
                 <button onclick="updateTimeframe('30', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md bg-zinc-800 text-white shadow transition font-semibold">30 dni</button>
+                <button onclick="updateTimeframe('90', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">90 dni</button>
                 <button onclick="updateTimeframe('180', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">6 mes</button>
                 <button onclick="updateTimeframe('365', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">1 leto</button>
-                <button onclick="updateTimeframe('1825', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">5 let</button>
-                <button onclick="updateTimeframe('max', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">MAX</button>
             </div>
         </div>
         
@@ -491,69 +492,27 @@
         await loadChart(currentDays);
     }
 
-    // Pridobivanje realne zgodovine brez ravnih ali poševnih črt
+    // Stabilno pridobivanje zgodovine prek CoinGecko API za obdobja do 1 leta
     async function fetchHistory(days) {
         const cacheKey = CHART_CACHE_PREFIX + days;
 
         try {
             const cached = JSON.parse(localStorage.getItem(cacheKey));
-            if (cached && Date.now() - cached.timestamp < 12 * 60 * 60 * 1000) {
+            if (cached && Date.now() - cached.timestamp < 2 * 60 * 60 * 1000) {
                 return cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
             }
         } catch(e) {}
 
-        let formattedData = [];
+        const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error("History API napaka");
+        const data = await response.json();
+        if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
 
-        // Za 5 let in MAX uporabimo Yahoo/Stooq proxy z realno zgodovino za zlato v EUR (XAU/EUR)
-        if (days === '1825' || days === 'max') {
-            const range = days === 'max' ? '10y' : '5y';
-            const url = `https://query1.finance.yahoo.com/v8/finance/chart/XAUEUR=X?range=${range}&interval=1wk`;
-            
-            try {
-                const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-                if (!res.ok) throw new Error("Yahoo API error");
-                const json = await res.json();
-                const timestamps = json.chart.result[0].timestamp;
-                const quotes = json.chart.result[0].indicators.quote[0].close;
-
-                formattedData = timestamps.map((ts, idx) => {
-                    const pricePerOz = quotes[idx];
-                    if (!pricePerOz) return null;
-                    return {
-                        time: new Date(ts * 1000),
-                        price: pricePerOz / TROY_OUNCE_GRAMS
-                    };
-                }).filter(item => item !== null);
-
-            } catch (err) {
-                // Rezervni vir z zanesljivim statičnim zgodovinskim trendom
-                const now = new Date();
-                const points = days === 'max' ? 120 : 60;
-                const baseNow = currentGoldPrice || 85;
-                const startPrice = days === 'max' ? baseNow * 0.45 : baseNow * 0.60;
-                
-                for (let i = points; i >= 0; i--) {
-                    const d = new Date();
-                    d.setMonth(now.getMonth() - (i * (days === 'max' ? 1 : 1)));
-                    const progress = (points - i) / points;
-                    // Realistična krivulja rasti zlata
-                    const price = startPrice + (baseNow - startPrice) * Math.pow(progress, 0.8) + (Math.sin(i) * 1.5);
-                    formattedData.push({ time: d, price });
-                }
-            }
-        } else {
-            // Za krajša obdobja (7, 30, 180, 365 dni) CoinGecko PAXG/EUR
-            const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
-            const response = await fetch(url, { cache: "no-store" });
-            if (!response.ok) throw new Error("History API napaka");
-            const data = await response.json();
-            if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
-
-            formattedData = data.prices.map(item => ({
-                time: new Date(item[0]),
-                price: item[1] / TROY_OUNCE_GRAMS
-            }));
-        }
+        const formattedData = data.prices.map(item => ({
+            time: new Date(item[0]),
+            price: item[1] / TROY_OUNCE_GRAMS
+        }));
 
         try {
             localStorage.setItem(cacheKey, JSON.stringify({
@@ -570,10 +529,10 @@
         try {
             history = await fetchHistory(days);
         } catch (error) {
-            console.warn("Nalagam iz varnostne opcije:", error);
+            console.warn("Napaka pri nalaganju zgodovine za", days, "dni:", error);
             const base = currentGoldPrice || 85;
             history = [
-                { time: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), price: base * 0.95 },
+                { time: new Date(Date.now() - days * 24 * 60 * 60 * 1000), price: base * 0.98 },
                 { time: new Date(), price: base }
             ];
         }
@@ -591,12 +550,13 @@
         btnElement.classList.add('bg-zinc-800', 'text-white', 'shadow');
 
         const labels = {
+            '1': 'Zadnjih 24 ur',
             '7': 'Zadnjih 7 dni',
+            '14': 'Zadnjih 14 dni',
             '30': 'Zadnjih 30 dni',
-            '180': 'Zadnjih 6 mesecev',
-            '365': 'Zadnje 1 leto',
-            '1825': 'Zadnjih 5 let',
-            'max': 'Zgodovina (10 let)'
+            '90': 'Zadnjih 90 dni (3 meseci)',
+            '180': 'Zadnjih 180 dni (6 mesecev)',
+            '365': 'Zadnje 1 leto (365 dni)'
         };
         document.getElementById('chartSubtitle').textContent = `${labels[days] || 'Zgodovina'} (cena v €/g)`;
 
@@ -630,7 +590,7 @@
                     backgroundColor: gradient,
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.2,
+                    tension: 0.15,
                     pointRadius: 0,
                     pointHoverRadius: 5,
                     pointHoverBackgroundColor: "#f97316",
@@ -659,6 +619,9 @@
                             title: function(context) {
                                 if (!context[0]) return "";
                                 const date = new Date(context[0].label);
+                                if (days === '1') {
+                                    return date.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
+                                }
                                 return date.toLocaleDateString("sl-SI", {
                                     day: "2-digit", month: "2-digit", year: "numeric"
                                 });
@@ -675,10 +638,10 @@
                             maxTicksLimit: 8,
                             callback: function(value) {
                                 const date = new Date(this.getLabelForValue(value));
-                                if (days === '1825' || days === 'max') {
-                                    return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
+                                if (days === '1') {
+                                    return date.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
                                 }
-                                if (days === '365') {
+                                if (days === '365' || days === '180') {
                                     return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
                                 }
                                 return date.toLocaleDateString("sl-SI", {
@@ -692,7 +655,7 @@
                         ticks: {
                             color: "#71717a",
                             font: { family: 'JetBrains Mono', size: 10 },
-                            callback: function(value) { return value.toFixed(0) + " €"; }
+                            callback: function(value) { return value.toFixed(1) + " €"; }
                         }
                     }
                 }
