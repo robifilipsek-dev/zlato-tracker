@@ -122,7 +122,7 @@
             </div>
         </div>
 
-        <!-- Sekundarni KPI: Vrednost 100g -->
+        <!-- Sekundarni KPI: Vrednost manjših palic -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
             <div>
                 <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Standardne teže</div>
@@ -144,7 +144,7 @@
             <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-500">Informativna spot vrednost</div>
         </div>
 
-        <!-- Sekundarni KPI: Vrednost 1kg -->
+        <!-- Sekundarni KPI: Vrednost večjih palic -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
             <div>
                 <div class="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Večje palice</div>
@@ -243,16 +243,18 @@
                 <p id="chartSubtitle" class="text-xs text-zinc-400 mt-0.5">Zadnjih 30 dni (cena v €/g)</p>
             </div>
             
-            <!-- Časovni gumbi za graf -->
+            <!-- Časovni gumbi za graf (dodano 5L in MAX) -->
             <div class="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 overflow-x-auto hide-scroll">
                 <button onclick="updateTimeframe('7', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">7 dni</button>
                 <button onclick="updateTimeframe('30', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md bg-zinc-800 text-white shadow transition font-semibold">30 dni</button>
                 <button onclick="updateTimeframe('180', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">6 mes</button>
                 <button onclick="updateTimeframe('365', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">1 leto</button>
+                <button onclick="updateTimeframe('1825', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">5 let</button>
+                <button onclick="updateTimeframe('max', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">MAX</button>
             </div>
         </div>
         
-        <div class="relative h-[340px]">
+        <div class="relative h-[340px] w-full">
             <canvas id="goldChart"></canvas>
         </div>
     </section>
@@ -269,7 +271,7 @@
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
             <div class="text-cyan-400 font-bold">Lokalno shranjevanje</div>
             <p class="text-zinc-400 leading-relaxed">
-                Podatki o količini in nabavni ceni se shranjujejo izključno v lokalnem pomnilniku (LocalStorage) vašega brskalnika.
+                Podatki o količini, nabavni ceni in predpomnjeni zgodovini se shranjujejo izključno v lokalnem pomnilniku vače naprave.
             </p>
         </div>
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
@@ -420,7 +422,6 @@
         try {
             const data = JSON.parse(localStorage.getItem(CACHE_KEY));
             if (!data) return null;
-            if (Date.now() - data.timestamp > 12 * 60 * 60 * 1000) return null;
             return data;
         } catch {
             return null;
@@ -458,7 +459,7 @@
         }
 
         document.getElementById("dataSource").textContent = data.source;
-        document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
+        document.getElementById("lastUpdate").textContent = new Date(data.timestamp || Date.now()).toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
         calculatePortfolio();
     }
 
@@ -480,55 +481,69 @@
             } catch (fallbackError) {
                 const cached = loadCache();
                 if (cached) {
-                    updatePriceUI({ price: cached.price, change24h: cached.change24h, source: "Lokalni cache" });
-                    status.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-500"></span> <span class="text-orange-400">Lokalni podatki</span>`;
+                    updatePriceUI({ price: cached.price, change24h: cached.change24h, source: cached.source + " (Cache)", timestamp: cached.timestamp });
+                    status.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-500"></span> <span class="text-orange-400">Brez povezave</span>`;
                 } else {
                     status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span> <span class="text-red-400">Ni povezave</span>`;
                     document.getElementById("currentPrice").textContent = "—";
                 }
             }
         }
-        loadChart(currentDays);
+        await loadChart(currentDays);
     }
 
     async function fetchHistory(days) {
         const cacheKey = CHART_CACHE_PREFIX + days;
+        let cachedData = null;
+
         try {
             const cached = JSON.parse(localStorage.getItem(cacheKey));
-            if (cached && (Date.now() - cached.timestamp < 60 * 60 * 1000)) {
-                return cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
+            if (cached) {
+                cachedData = cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
+                // Če je cache svež (manj kot 2 uri), ga vrnemo takoj
+                if (Date.now() - cached.timestamp < 2 * 60 * 60 * 1000) {
+                    return cachedData;
+                }
             }
         } catch(e) {}
 
-        const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
-        const response = await fetch(url, { cache: "no-store" });
-        
-        if (!response.ok) throw new Error("History API napaka");
-        const data = await response.json();
-        if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
-        
-        const formattedData = data.prices.map(item => ({
-            time: new Date(item[0]),
-            price: item[1] / TROY_OUNCE_GRAMS
-        }));
-
         try {
-            localStorage.setItem(cacheKey, JSON.stringify({
-                timestamp: Date.now(),
-                data: formattedData
+            const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
+            const response = await fetch(url, { cache: "no-store" });
+            
+            if (!response.ok) throw new Error("History API napaka");
+            const data = await response.json();
+            if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
+            
+            const formattedData = data.prices.map(item => ({
+                time: new Date(item[0]),
+                price: item[1] / TROY_OUNCE_GRAMS
             }));
-        } catch(e) {}
 
-        return formattedData;
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: formattedData
+                }));
+            } catch(e) {}
+
+            return formattedData;
+        } catch (error) {
+            if (cachedData) {
+                console.warn("Uporabljam obstoječi cache za graf:", error);
+                return cachedData;
+            }
+            throw error;
+        }
     }
 
     function generateFallbackHistory(days) {
         const result = [];
         const now = Date.now();
         const base = currentGoldPrice || 80;
-        let daysNum = parseInt(days) || 30;
+        let daysNum = days === 'max' ? 3650 : (parseInt(days) || 30);
 
-        for (let i = daysNum; i >= 0; i--) {
+        for (let i = daysNum; i >= 0; i -= Math.max(1, Math.floor(daysNum / 50))) {
             result.push({
                 time: new Date(now - i * 24 * 60 * 60 * 1000),
                 price: base
@@ -542,7 +557,7 @@
         try {
             history = await fetchHistory(days);
         } catch (error) {
-            console.warn("Uporabljam ravno črto zaradi napake pri pridobivanju zgodovine (Rate Limit).");
+            console.warn("Uporabljam rezervno zgodovino za graf.");
             history = generateFallbackHistory(days);
         }
         drawChart(history, days);
@@ -562,23 +577,31 @@
             '7': 'Zadnjih 7 dni',
             '30': 'Zadnjih 30 dni',
             '180': 'Zadnjih 6 mesecev',
-            '365': 'Zadnje 1 leto'
+            '365': 'Zadnje 1 leto',
+            '1825': 'Zadnjih 5 let',
+            'max': 'Vsa zgodovina'
         };
-        document.getElementById('chartSubtitle').textContent = `${labels[days]} (cena v €/g)`;
+        document.getElementById('chartSubtitle').textContent = `${labels[days] || 'Zgodovina'} (cena v €/g)`;
 
         await loadChart(days);
     }
 
     function drawChart(history, days) {
         const canvas = document.getElementById("goldChart");
-        if (chart) chart.destroy();
+        if (!canvas) return;
+
+        // Pravilno uničenje stare instance
+        if (chart) {
+            chart.destroy();
+            chart = null;
+        }
 
         const labels = history.map(item => item.time);
         const prices = history.map(item => item.price);
         const ctx = canvas.getContext("2d");
 
         const gradient = ctx.createLinearGradient(0, 0, 0, 340);
-        gradient.addColorStop(0, "rgba(249, 115, 22, 0.2)");
+        gradient.addColorStop(0, "rgba(249, 115, 22, 0.25)");
         gradient.addColorStop(1, "rgba(249, 115, 22, 0)");
 
         chart = new Chart(ctx, {
@@ -591,7 +614,7 @@
                     backgroundColor: gradient,
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.35,
+                    tension: 0.2,
                     pointRadius: 0,
                     pointHoverRadius: 5,
                     pointHoverBackgroundColor: "#f97316",
@@ -601,6 +624,7 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 400 },
                 interaction: { intersect: false, mode: "index" },
                 plugins: {
                     legend: { display: false },
@@ -617,7 +641,9 @@
                                 return " " + formatEUR(context.parsed.y) + " / g";
                             },
                             title: function(context) {
-                                return new Date(context[0].label).toLocaleDateString("sl-SI", {
+                                if (!context[0]) return "";
+                                const date = new Date(context[0].label);
+                                return date.toLocaleDateString("sl-SI", {
                                     day: "2-digit", month: "2-digit", year: "numeric"
                                 });
                             }
@@ -633,6 +659,9 @@
                             maxTicksLimit: 8,
                             callback: function(value) {
                                 const date = new Date(this.getLabelForValue(value));
+                                if (days === '1825' || days === 'max') {
+                                    return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
+                                }
                                 if (days === '365') {
                                     return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
                                 }
@@ -654,6 +683,13 @@
             }
         });
     }
+
+    // Samodejno prilagajanje dimenzij grafa
+    const resizeObserver = new ResizeObserver(() => {
+        if (chart) chart.resize();
+    });
+    const chartContainer = document.getElementById("goldChart")?.parentElement;
+    if (chartContainer) resizeObserver.observe(chartContainer);
 
     document.getElementById("goldAmount").addEventListener("input", savePortfolio);
     document.getElementById("purchasePrice").addEventListener("input", savePortfolio);
