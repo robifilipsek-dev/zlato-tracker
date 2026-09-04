@@ -113,7 +113,7 @@
                 <div id="priceChange" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-950 border border-zinc-800 text-zinc-300">
                     <span>—</span>
                 </div>
-                <div class="text-zinc-500 font-mono-num">24h sprememba: <strong id="priceChangePercent" class="text-zinc-300">—</strong></div>
+                <div class="text-zinc-500 font-mono-num">Sprememba (graf): <strong id="dynamicTrend" class="text-zinc-300">—</strong></div>
             </div>
             <div class="mt-4 pt-3 border-t border-zinc-800/80 flex flex-wrap justify-between gap-2 text-[11px] text-zinc-500 font-mono-num">
                 <span>Vir: <strong id="dataSource" class="text-zinc-400">—</strong></span>
@@ -441,7 +441,6 @@
         document.getElementById("price1kg").textContent = formatEUR(currentGoldPrice * 1000);
 
         const changeElement = document.getElementById("priceChange");
-        const percentElement = document.getElementById("priceChangePercent");
 
         if (Number.isFinite(data.change24h)) {
             const positive = data.change24h >= 0;
@@ -449,13 +448,10 @@
                 <span class="${positive ? "text-emerald-400" : "text-red-400"} font-semibold">
                     ${positive ? "▲" : "▼"} ${Math.abs(data.change24h).toFixed(2)}%
                 </span>
-                <span class="text-zinc-400">vs prejšnji dan</span>
+                <span class="text-zinc-400">24h</span>
             `;
-            percentElement.textContent = (positive ? "+" : "") + data.change24h.toFixed(2) + "%";
-            percentElement.className = "font-mono-num font-semibold " + (positive ? "text-emerald-400" : "text-red-400");
         } else {
-            changeElement.innerHTML = `<span class="text-zinc-500">Sprememba ni na voljo</span>`;
-            percentElement.textContent = "—";
+            changeElement.innerHTML = `<span class="text-zinc-500">24h ni na voljo</span>`;
         }
 
         document.getElementById("dataSource").textContent = data.source;
@@ -481,8 +477,8 @@
             } catch (fallbackError) {
                 const cached = loadCache();
                 if (cached) {
-                    updatePriceUI({ price: cached.price, change24h: cached.change24h, source: cached.source + " (Cache)", timestamp: cached.timestamp });
-                    status.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-500"></span> <span class="text-orange-400">Brez povezave</span>`;
+                    updatePriceUI({ ...cached, source: "Lokalni cache (stari podatki)" });
+                    status.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-500"></span> <span class="text-orange-400">Lokalni podatki</span>`;
                 } else {
                     status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span> <span class="text-red-400">Ni povezave</span>`;
                     document.getElementById("currentPrice").textContent = "—";
@@ -492,13 +488,11 @@
         await loadChart(currentDays);
     }
 
-    // Stabilno pridobivanje zgodovine prek CoinGecko API za obdobja do 1 leta
     async function fetchHistory(days) {
         const cacheKey = CHART_CACHE_PREFIX + days;
-
         try {
             const cached = JSON.parse(localStorage.getItem(cacheKey));
-            if (cached && Date.now() - cached.timestamp < 2 * 60 * 60 * 1000) {
+            if (cached && (Date.now() - cached.timestamp < 60 * 60 * 1000)) {
                 return cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
             }
         } catch(e) {}
@@ -506,9 +500,10 @@
         const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error("History API napaka");
+        
         const data = await response.json();
         if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
-
+        
         const formattedData = data.prices.map(item => ({
             time: new Date(item[0]),
             price: item[1] / TROY_OUNCE_GRAMS
@@ -536,6 +531,19 @@
                 { time: new Date(), price: base }
             ];
         }
+
+        if (history && history.length > 0) {
+            const startPrice = history[0].price;
+            const endPrice = currentGoldPrice || history[history.length - 1].price;
+            if (startPrice > 0) {
+                const trend = ((endPrice - startPrice) / startPrice) * 100;
+                const trendElement = document.getElementById("dynamicTrend");
+                const isPositive = trend >= 0;
+                trendElement.textContent = (isPositive ? "+" : "") + trend.toFixed(2) + " %";
+                trendElement.className = "font-mono-num font-semibold " + (isPositive ? "text-emerald-400" : "text-red-400");
+            }
+        }
+
         drawChart(history, days);
     }
 
@@ -565,12 +573,7 @@
 
     function drawChart(history, days) {
         const canvas = document.getElementById("goldChart");
-        if (!canvas) return;
-
-        if (chart) {
-            chart.destroy();
-            chart = null;
-        }
+        if (chart) chart.destroy();
 
         const labels = history.map(item => item.time);
         const prices = history.map(item => item.price);
@@ -590,7 +593,7 @@
                     backgroundColor: gradient,
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.15,
+                    tension: 0.2,
                     pointRadius: 0,
                     pointHoverRadius: 5,
                     pointHoverBackgroundColor: "#f97316",
@@ -600,7 +603,6 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: { duration: 400 },
                 interaction: { intersect: false, mode: "index" },
                 plugins: {
                     legend: { display: false },
@@ -655,19 +657,13 @@
                         ticks: {
                             color: "#71717a",
                             font: { family: 'JetBrains Mono', size: 10 },
-                            callback: function(value) { return value.toFixed(1) + " €"; }
+                            callback: function(value) { return formatNumber(value, 0) + " €"; }
                         }
                     }
                 }
             }
         });
     }
-
-    const resizeObserver = new ResizeObserver(() => {
-        if (chart) chart.resize();
-    });
-    const chartContainer = document.getElementById("goldChart")?.parentElement;
-    if (chartContainer) resizeObserver.observe(chartContainer);
 
     document.getElementById("goldAmount").addEventListener("input", savePortfolio);
     document.getElementById("purchasePrice").addEventListener("input", savePortfolio);
