@@ -8,7 +8,7 @@
     <!-- PWA & Favicon nastavitve -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzA5MGIwZiIvPjx0ZXh0IHg9IjI1NiIgeT0iMzI4IiBmb250LXNpemU9IjI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZjk3MzE2Ij5BdTwvdGV4dD48L3N2Zz4=">
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzA5MGIwZiIvPjx0ZXh0IHg9IjI1NiIgeT0iMzI4IiBmb250LXNpemU9IjI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZjk3MzE2Ij5BdTwvdGV4dD48L3N2Zz4=">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Zlato%20tracker%22%2C%22short_name%22%3A%22Zlato%22%2C%22start_url%22%3A%22%2Fbitcoin-tracker%2F%22%2C%22scope%22%3A%22%2Fbitcoin-tracker%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23090b0f%22%2C%22theme_color%22%3A%22%23090b0f%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzA5MGIwZiIvPjx0ZXh0IHg9IjI1NiIgeT0iMzI4IiBmb250LXNpemU9IjI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZjk3MzE2Ij5BdTwvdGV4dD48L3N2Zz4%3D%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Zlato%20tracker%22%2C%22short_name%22%3A%22Zlato%22%2C%22start_url%22%3A%22%2Fgold-tracker%2F%22%2C%22scope%22%3A%22%2Fgold-tracker%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23090b0f%22%2C%22theme_color%22%3A%22%23090b0f%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzA5MGIwZiIvPjx0ZXh0IHg9IjI1NiIgeT0iMzI4IiBmb250LXNpemU9IjI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZjk3MzE2Ij5BdTwvdGV4dD48L3N2Zz4%3D%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -247,7 +247,6 @@
                 <p id="chartSubtitle" class="text-xs text-zinc-400 mt-0.5">Zadnjih 30 dni (cena v €/g)</p>
             </div>
             
-            <!-- Posodobljeni standardni časovni gumbi -->
             <div class="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 overflow-x-auto hide-scroll">
                 <button onclick="updateTimeframe('1', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">24h</button>
                 <button onclick="updateTimeframe('7', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">7 dni</button>
