@@ -255,6 +255,10 @@
                 <button onclick="updateTimeframe('90', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">90 dni</button>
                 <button onclick="updateTimeframe('180', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">6 mes</button>
                 <button onclick="updateTimeframe('365', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">1 leto</button>
+                <button onclick="updateTimeframe('1095', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">3 leta</button>
+                <button onclick="updateTimeframe('1825', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">5 let</button>
+                <button onclick="updateTimeframe('3650', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">10 let</button>
+                <button onclick="updateTimeframe('max', this)" class="chart-btn shrink-0 px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-white transition font-semibold">Vse</button>
             </div>
         </div>
         
@@ -393,26 +397,16 @@
     }
 
     async function fetchFallback() {
-        const metalResponse = await fetch("https://api.metals.live/v1/spot/gold", { cache: "no-store" });
-        if (!metalResponse.ok) throw new Error("Metals.live napaka");
-        const metalData = await metalResponse.json();
-        let goldUSD = null;
-        if (Array.isArray(metalData) && metalData.length) {
-            const latest = metalData[metalData.length - 1];
-            if (latest && Number.isFinite(latest.price)) goldUSD = latest.price;
-        }
-        if (!goldUSD) throw new Error("Ni USD cene zlata");
-
-        const fxResponse = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR", { cache: "no-store" });
-        if (!fxResponse.ok) throw new Error("Frankfurter napaka");
-        const fxData = await fxResponse.json();
-        const usdToEur = fxData.rates.EUR;
-        if (!Number.isFinite(usdToEur)) throw new Error("Ni EUR/USD tečaja");
-
+        const [px, fx] = await Promise.all([
+            fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=PAXGUSDT", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error("Binance PAXG"); return r.json(); }),
+            fetch("https://api.binance.com/api/v3/ticker/price?symbol=EURUSDT", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error("Binance EURUSDT"); return r.json(); })
+        ]);
+        const usd = parseFloat(px.lastPrice), eurusd = parseFloat(fx.price);
+        if (!(usd > 0 && eurusd > 0)) throw new Error("Neveljavni podatki Binance");
         return {
-            price: (goldUSD * usdToEur) / TROY_OUNCE_GRAMS,
-            change24h: null,
-            source: "Metals.live + Frankfurter"
+            price: usd / eurusd / TROY_OUNCE_GRAMS,
+            change24h: parseFloat(px.priceChangePercent) || 0,
+            source: "Binance / PAXG"
         };
     }
 
@@ -492,38 +486,151 @@
         await loadChart(currentDays);
     }
 
-    async function fetchHistory(days) {
-        const cacheKey = CHART_CACHE_PREFIX + days;
-        try {
-            const cached = JSON.parse(localStorage.getItem(cacheKey));
-            if (cached && (Date.now() - cached.timestamp < 60 * 60 * 1000)) {
-                return cached.data.map(item => ({ time: new Date(item.time), price: item.price }));
-            }
-        } catch(e) {}
+        // ===== Dolga zgodovina (Binance + Frankfurter), brez API ključa =====
+    let historySource = "";
+    const BINANCE_HOSTS = ["https://data-api.binance.vision", "https://api.binance.com"];
+    const MAX_POINTS = 600;
 
+    async function fetchBinanceKlines(symbol, fromMs, interval = "1d") {
+        let lastErr;
+        for (const host of BINANCE_HOSTS) {
+            try {
+                const out = [];
+                let start = fromMs;
+                for (let i = 0; i < 12; i++) {
+                    const r = await fetch(`${host}/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${start}&limit=1000`);
+                    if (!r.ok) throw new Error("Binance " + r.status);
+                    const rows = await r.json();
+                    if (!Array.isArray(rows)) throw new Error("Binance format");
+                    for (const k of rows) {
+                        const p = parseFloat(k[4]);
+                        if (Number.isFinite(p)) out.push({ time: new Date(k[0]), price: p });
+                    }
+                    if (rows.length < 1000) break;
+                    start = rows[rows.length - 1][0] + 1;
+                }
+                if (out.length) return out;
+                throw new Error("Prazen odgovor");
+            } catch (e) { lastErr = e; }
+        }
+        throw lastErr;
+    }
+
+    function downsample(data, maxPoints = MAX_POINTS) {
+        if (data.length <= maxPoints) return data;
+        const size = data.length / maxPoints, out = [];
+        for (let i = 0; i < maxPoints; i++) {
+            const a = Math.floor(i * size);
+            const b = Math.max(a + 1, Math.floor((i + 1) * size));
+            const s = data.slice(a, b);
+            out.push({ time: s[s.length - 1].time, price: s.reduce((t, p) => t + p.price, 0) / s.length });
+        }
+        out[out.length - 1] = data[data.length - 1];
+        return out;
+    }
+
+    function readChartCache(key, maxAge) {
+        try {
+            const c = JSON.parse(localStorage.getItem(key));
+            if (c && Date.now() - c.timestamp < maxAge && Array.isArray(c.data) && c.data.length) {
+                historySource = c.source || "";
+                return c.data.map(i => ({ time: new Date(i.time), price: i.price }));
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    function writeChartCache(key, data, source) {
+        try { localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), source, data })); } catch (e) {}
+    }
+
+    function isoDate(ms) { return new Date(ms).toISOString().slice(0, 10); }
+
+    async function fetchCoinGeckoHistory(days) {
         const url = `https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=eur&days=${days}`;
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error("History API napaka");
-        
         const data = await response.json();
         if (!data.prices || !Array.isArray(data.prices)) throw new Error("Ni zgodovinskih podatkov");
-        
-        const formattedData = data.prices.map(item => ({
-            time: new Date(item[0]),
-            price: item[1] / TROY_OUNCE_GRAMS
-        }));
-
-        try {
-            localStorage.setItem(cacheKey, JSON.stringify({
-                timestamp: Date.now(),
-                data: formattedData
-            }));
-        } catch(e) {}
-
-        return formattedData;
+        return data.prices.map(item => ({ time: new Date(item[0]), price: item[1] / TROY_OUNCE_GRAMS }));
     }
 
-    async function loadChart(days = '30') {
+    // PAXG (USDT) / EURUSDT / 31,1035 = €/g, dnevno od 2019
+    async function fetchPaxgEur(fromMs, interval = "1d") {
+        const [pax, eur] = await Promise.all([
+            fetchBinanceKlines("PAXGUSDT", fromMs, interval),
+            fetchBinanceKlines("EURUSDT", fromMs, interval)
+        ]);
+        const key = d => d.toISOString().slice(0, 10);
+        const fx = new Map(eur.map(p => [key(p.time), p.price]));
+        const out = pax
+            .map(p => ({ time: p.time, price: p.price / fx.get(key(p.time)) / TROY_OUNCE_GRAMS }))
+            .filter(p => Number.isFinite(p.price) && p.price > 0);
+        if (!out.length) throw new Error("Ni podatkov PAXG");
+        return out;
+    }
+
+    // XAU/EUR mesečno od 1999 (ECB in drugi centralni viri prek Frankfurter)
+    async function fetchFrankfurterGold(fromDate) {
+        const url = `https://api.frankfurter.dev/v2/rates?base=XAU&quotes=EUR&from=${fromDate}&group=month`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error("Frankfurter " + r.status);
+        const json = await r.json();
+        let rows = [];
+        if (Array.isArray(json)) {
+            rows = json.map(x => ({ d: x.date, v: Number(x.rate !== undefined ? x.rate : (x.rates && x.rates.EUR)) }));
+        } else if (json && json.rates) {
+            rows = Object.entries(json.rates).map(([d, v]) => ({ d, v: Number(typeof v === "object" ? v.EUR : v) }));
+        }
+        rows = rows.filter(x => x.d && Number.isFinite(x.v) && x.v > 0).sort((a, b) => a.d.localeCompare(b.d));
+        if (!rows.length) throw new Error("Frankfurter: prazen odgovor");
+        const mid = rows[Math.floor(rows.length / 2)].v;
+        const toGram = mid < 1 ? (v => 1 / v / TROY_OUNCE_GRAMS) : (v => v / TROY_OUNCE_GRAMS);
+        const out = rows.map(x => ({ time: new Date(x.d), price: toGram(x.v) }));
+        if (currentGoldPrice) out.push({ time: new Date(), price: currentGoldPrice });
+        return out;
+    }
+
+    async function fetchHistory(days) {
+        const isLong = days === 'max' || Number(days) > 365;
+        const cacheKey = CHART_CACHE_PREFIX + days;
+        const cached = readChartCache(cacheKey, (isLong ? 6 : 1) * 60 * 60 * 1000);
+        if (cached) return cached;
+
+        let data, source;
+        if (!isLong) {
+            try {
+                data = await fetchCoinGeckoHistory(days);
+                source = "CoinGecko / PAXG";
+            } catch (e) {
+                if (Number(days) < 7) throw e;
+                data = downsample(await fetchPaxgEur(Date.now() - Number(days) * 864e5));
+                source = "Binance / PAXG";
+            }
+        } else {
+            const fromMs = days === 'max' ? 0 : Date.now() - Number(days) * 864e5;
+            const dailyOk = days !== 'max' && Number(days) <= 2300;
+            if (dailyOk) {
+                try { data = downsample(await fetchPaxgEur(fromMs)); source = "Binance / PAXG"; } catch (e) {}
+            }
+            if (!data) {
+                try {
+                    data = await fetchFrankfurterGold(days === 'max' ? "1999-01-01" : isoDate(fromMs));
+                    source = "Frankfurter XAU (mesečno)";
+                } catch (e) {}
+            }
+            if (!data && !dailyOk) {
+                data = downsample(await fetchPaxgEur(fromMs, "1w"));
+                source = "Binance / PAXG (od 2019)";
+            }
+            if (!data) throw new Error("Ni zgodovine");
+        }
+        historySource = source;
+        writeChartCache(cacheKey, data, source);
+        return data;
+    }
+
+async function loadChart(days = '30') {
         let history;
         try {
             history = await fetchHistory(days);
@@ -531,7 +638,7 @@
             console.warn("Napaka pri nalaganju zgodovine za", days, "dni:", error);
             const base = currentGoldPrice || 85;
             history = [
-                { time: new Date(Date.now() - days * 24 * 60 * 60 * 1000), price: base * 0.98 },
+                { time: new Date(Date.now() - (parseInt(days) || 365) * 24 * 60 * 60 * 1000), price: base * 0.98 },
                 { time: new Date(), price: base }
             ];
         }
@@ -549,6 +656,9 @@
         }
 
         drawChart(history, days);
+        const subEl = document.getElementById('chartSubtitle');
+        if (!subEl.dataset.base) subEl.dataset.base = subEl.textContent;
+        subEl.textContent = subEl.dataset.base + (historySource ? ' · vir: ' + historySource : '');
     }
 
     async function updateTimeframe(days, btnElement) {
@@ -568,9 +678,15 @@
             '30': 'Zadnjih 30 dni',
             '90': 'Zadnjih 90 dni (3 meseci)',
             '180': 'Zadnjih 180 dni (6 mesecev)',
-            '365': 'Zadnje 1 leto (365 dni)'
+            '365': 'Zadnje 1 leto (365 dni)',
+            '1095': 'Zadnja 3 leta',
+            '1825': 'Zadnjih 5 let',
+            '3650': 'Zadnjih 10 let',
+            'max': 'Celotna zgodovina'
         };
-        document.getElementById('chartSubtitle').textContent = `${labels[days] || 'Zgodovina'} (cena v €/g)`;
+        const sub = document.getElementById('chartSubtitle');
+        sub.dataset.base = `${labels[days] || 'Zgodovina'} (cena v €/g)`;
+        sub.textContent = sub.dataset.base;
 
         await loadChart(days);
     }
@@ -647,7 +763,7 @@
                                 if (days === '1') {
                                     return date.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
                                 }
-                                if (days === '365' || days === '180') {
+                                if (days === 'max' || Number(days) >= 180) {
                                     return date.toLocaleDateString("sl-SI", { month: "short", year: "2-digit" });
                                 }
                                 return date.toLocaleDateString("sl-SI", {
