@@ -1,0 +1,4 @@
+const CACHE='rf-zlato-mobile-v3-'+self.registration.scope;
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['./index.html','./zlato.webmanifest','./zlato-icon-192.png','./zlato-icon-512.png'])).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',event=>{event.waitUntil(self.clients.claim())});
+self.addEventListener('fetch',event=>{const url=new URL(event.request.url),allowed=['index.html','zlato.webmanifest','zlato-icon-192.png','zlato-icon-512.png'].map(p=>new URL(p,self.registration.scope).href);if(event.request.method!=='GET'||!allowed.includes(url.href))return;event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(event.request,copy)))}return response}).catch(async()=>{const cache=await caches.open(CACHE);return await cache.match(event.request)||Response.error()}))});
